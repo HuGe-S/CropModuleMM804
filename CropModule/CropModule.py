@@ -39,6 +39,8 @@ def createCroppedVolume(inputVolume, roi):
     croppedVolume = slicer.mrmlScene.GetNodeByID(cropVolumeParameterNode.GetOutputVolumeNodeID())
     return croppedVolume
 
+
+  
 class CropModuleWidget:
   def __init__(self, parent = None): #constructor 
     if not parent:
@@ -59,16 +61,21 @@ class CropModuleWidget:
     sampleCollapsibleButton = ctk.ctkCollapsibleButton()
     sampleCollapsibleButton.text = "Main Panel"
     self.layout.addWidget(sampleCollapsibleButton)
-
-    # Layout within the sample collapsible button
-    sampleFormLayout = qt.QFormLayout(sampleCollapsibleButton)
-
-    # Select Volume
-    self.formFrame = qt.QFrame(sampleCollapsibleButton)
     # Set layout
+
+    self.formFrame = qt.QFrame(sampleCollapsibleButton)   
     self.formFrame.setLayout(qt.QHBoxLayout())
+    self.formFrame1 = qt.QFrame(sampleCollapsibleButton)   
+    self.formFrame1.setLayout(qt.QHBoxLayout())
+    self.formFrame2 = qt.QFrame(sampleCollapsibleButton)   
+    self.formFrame2.setLayout(qt.QHBoxLayout())
+    self.formFrame3 = qt.QFrame(sampleCollapsibleButton)   
+    self.formFrame3.setLayout(qt.QHBoxLayout())
     # bind new frame to the layout menu
     self.layout.addWidget(self.formFrame)
+    self.layout.addWidget(self.formFrame1)
+    self.layout.addWidget(self.formFrame2)
+    self.layout.addWidget(self.formFrame3)
 
     #create volume selector
     self.inputSelector = qt.QLabel("Input Volume", self.formFrame)
@@ -83,18 +90,17 @@ class CropModuleWidget:
     #bind the input selector to the frame
     self.formFrame.layout().addWidget(self.inputSelector)
 
-    # HelloWorld button
-    # (Insert Section A text here)
-    # (be sure to match indentation of the rest of this 
-    # code)
-    Button_volume=qt.QPushButton("Show Volume")
-    Button_volume.toolTip="Show Volume of selected file."
+  
+
+    #Set up buttons
+    Button_volume = qt.QPushButton("Show Volume")
+    Button_volume.toolTip = "Show Volume of selected file."
     self.formFrame.layout().addWidget(Button_volume)
-    Button_volume.connect('clicked(bool)',self.onButton_volumeClicked)
+    Button_volume.connect('clicked(bool)', self.onButton_volumeClicked)
 
 
     Button_clip=qt.QPushButton("Crop Volume")
-    Button_clip.toolTip="Show Volume of selected file."
+    Button_clip.toolTip="Crop Volume of selected file."
     self.formFrame.layout().addWidget(Button_clip)
     Button_clip.connect('clicked(bool)',self.onButton_cropClicked)
 
@@ -104,21 +110,67 @@ class CropModuleWidget:
     self.formFrame.layout().addWidget(Button_remove)
     Button_remove.connect('clicked(bool)',self.onButton_removeClicked)
 
+    #Set up sliders
+    self.xLabel = qt.QLabel("LR", self.formFrame1)
+    self.xLabel.setMinimumWidth(80)
+    self.xsld = qt.QSlider(qt.Qt.Horizontal,self.formFrame1)
+    self.xsld.setRange(0, 100)
+    self.xsld.setValue(100) 
+    self.xsld.setFixedWidth(400)
+    self.xsld.setFocusPolicy(qt.Qt.NoFocus)
+    self.xsld.setPageStep(5)
+    self.xsld.valueChanged.connect(self.xchangeValue)
+    self.xnumber = qt.QLabel('100',self.formFrame1)
+    self.xnumber.setMinimumWidth(50)
+    self.formFrame1.layout().addWidget(self.xLabel)
+    self.formFrame1.layout().addWidget(self.xsld)
+    self.formFrame1.layout().addWidget(self.xnumber)
 
+
+    self.yLabel = qt.QLabel("AP", self.formFrame2)
+    self.yLabel.setMinimumWidth(80)
+    self.ysld = qt.QSlider(qt.Qt.Horizontal,self.formFrame2)
+    self.ysld.setRange(0, 100)
+    self.ysld.setValue(100) 
+    self.ysld.setFixedWidth(400)
+    self.ysld.setFocusPolicy(qt.Qt.NoFocus)
+    self.ysld.setPageStep(5)
+    self.ysld.valueChanged.connect(self.ychangeValue)
+    self.ynumber = qt.QLabel('100',self.formFrame2)
+    self.ynumber.setMinimumWidth(50)
+    self.formFrame2.layout().addWidget(self.yLabel)
+    self.formFrame2.layout().addWidget(self.ysld)
+    self.formFrame2.layout().addWidget(self.ynumber)
+
+    self.zLabel = qt.QLabel("SI", self.formFrame3)
+    self.zLabel.setMinimumWidth(80)
+    self.zsld = qt.QSlider(qt.Qt.Horizontal,self.formFrame3)
+    self.zsld.setRange(0, 100)
+    self.zsld.setValue(100) 
+    self.zsld.setFixedWidth(400)
+    self.zsld.setFocusPolicy(qt.Qt.NoFocus)
+    self.zsld.setPageStep(5)
+    self.zsld.valueChanged.connect(self.zchangeValue)
+    self.znumber = qt.QLabel('100',self.formFrame3)
+    self.znumber.setMinimumWidth(50)
+    self.formFrame3.layout().addWidget(self.zLabel)
+    self.formFrame3.layout().addWidget(self.zsld)
+    self.formFrame3.layout().addWidget(self.znumber)
+
+    #set up initial roi region
+    self.x = self.xsld.value
+    self.y = self.ysld.value
+    self.z = self.zsld.value
+
+    self.Button_volume = Button_volume
+    self.r = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLAnnotationROINode")
+    self.r.SetRadiusXYZ(100, 100, 100)
     
 
-    # Add vertical spacer
-    self.layout.addStretch(1)
-
-    # Set local var as instance attribute
-    self.Button_volume = Button_volume
-
-    self.r=slicer.vtkMRMLAnnotationROINode()
-    slicer.mrmlScene.AddNode(self.r)
-
   def onButton_volumeClicked(self):
-    #print("Hello World !")
-    #qt.QMessageBox.information(slicer.util.mainWindow(),'Slicer Python', 'Hello World!')
+    '''
+    show volume
+    '''
     logic = slicer.modules.volumerendering.logic()
     volumeNode = slicer.util.getNode(self.inputSelector.currentNode().GetName())
     displayNode = logic.CreateVolumeRenderingDisplayNode()
@@ -128,10 +180,13 @@ class CropModuleWidget:
     logic.UpdateDisplayNodeFromVolumeNode(displayNode, volumeNode)
 
   def onButton_cropClicked(self):
+    '''
+    update volume
+    '''
     r=self.r
     logic = slicer.modules.volumerendering.logic()
     volumeNode = slicer.util.getNode(self.inputSelector.currentNode().GetName())
-    cropvolumeNode = createCroppedVolume(volumeNode,r)
+    cropvolumeNode = createCroppedVolume(volumeNode, r)
 
     slicer.mrmlScene.RemoveNode(volumeNode) 
     logic = slicer.modules.volumerendering.logic()
@@ -142,6 +197,31 @@ class CropModuleWidget:
     logic.UpdateDisplayNodeFromVolumeNode(displayNode, volumeNode)
 
   def onButton_removeClicked(self):
+    '''
+    remove volume
+    '''
     volumeNode = slicer.util.getNode(self.inputSelector.currentNode().GetName())
     slicer.mrmlScene.RemoveNode(volumeNode) 
+
+  def updateLabel(self, label, value):
+    '''
+    update label value
+    '''
+    label.setText(str(value))
+    self.x = self.xsld.value
+    self.y = self.ysld.value
+    self.z = self.zsld.value
+
+  def xchangeValue(self, value):
+    self.updateLabel(self.xnumber, value)
+    self.r.SetRadiusXYZ(self.x, self.y, self.z)
+    
+  def ychangeValue(self, value):
+    self.updateLabel(self.ynumber, value)
+    self.r.SetRadiusXYZ(self.x, self.y, self.z)
+
+  def zchangeValue(self, value):
+    self.updateLabel(self.znumber, value)
+    self.r.SetRadiusXYZ(self.x, self.y, self.z)
+
 
